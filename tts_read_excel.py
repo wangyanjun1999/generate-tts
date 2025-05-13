@@ -11,17 +11,28 @@ import tkinter as tk
 from tkinter import filedialog
 import re
 
-# 定义输出目录
-OUTPUT_DIR = r"./output"
+# 定义全局配置
+OUTPUT_DIR = r"./output"  # 输出目录
+VOICE = "fr-FR-HenriNeural"  # 法语男声
+# VOICE = "fr-FR-DeniseNeural"  # 法语女声
+RATE = "-5%"  # 语速
+MAX_FILENAME_LENGTH = 50  # 最大文件名长度
 
 # 确保输出目录存在
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 
-async def text_to_speech(text, voice, output, rate="-15%"):
+async def text_to_speech(text, output, voice=None, rate=None):
     """
     将文本转换为语音并保存到指定的输出文件。
+    使用全局变量作为默认值。
     """
+    # 如果未指定，使用全局变量
+    if voice is None:
+        voice = VOICE
+    if rate is None:
+        rate = RATE
+
     communicate = edge_tts.Communicate(text, voice, rate=rate)
     try:
         await communicate.save(output)
@@ -62,10 +73,6 @@ async def process_excel_file(file_path):
         # 获取第一列数据（法语单词或短语）
         words = df.iloc[:, 0].tolist()
 
-        # 设置法语语音
-        voice = "fr-FR-HenriNeural"  # 法语男声
-        # 或者使用 "fr-FR-DeniseNeural" 法语女声
-
         # 处理每个单词
         for word in words:
             if pd.isna(word) or word == "":
@@ -78,7 +85,6 @@ async def process_excel_file(file_path):
             filename = sanitize_filename(original_word)
 
             # 如果文件名过长，截断它
-            MAX_FILENAME_LENGTH = 50
             if len(filename) > MAX_FILENAME_LENGTH:
                 filename = filename[:MAX_FILENAME_LENGTH]
 
@@ -96,7 +102,7 @@ async def process_excel_file(file_path):
 
             # 生成TTS音频
             print(f"正在为 '{original_word}' 生成音频...")
-            await text_to_speech(original_word, voice, output)
+            await text_to_speech(original_word, output)
 
         print("所有单词处理完成！")
 
